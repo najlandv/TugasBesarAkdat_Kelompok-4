@@ -516,24 +516,12 @@ def main():
 
             # Boxed section for regression results
             with st.container():
-                # Menampilkan hasil analisis regresi linier
                 st.subheader("📊 Linear Regression Analysis Results")
                 st.write(f"Mean Squared Error (MSE): {mse}")
                 st.write(f"R-squared: {r2}")
-                
-                # Menambahkan dua link setelah hasil analisis
-                st.markdown(
-                    """
-                    🔗 [Hasil Analisis](https://tugasbesarakdatkelompok-4-kelasb.streamlit.app/#31a9def2)  
-                    🔗 [Visualisasi Data](https://tugasbesarakdatkelompok-4-kelasb.streamlit.app/#28282ccd)
-                    """, 
-                    unsafe_allow_html=True
-                )
-                
-                # Menampilkan data perbandingan antara nilai aktual dan prediksi
                 st.subheader("Actual vs Predicted")
                 st.write(comparison.head(10))
-
+                
                 # Add a hover effect explanation for analysis results
                 st.subheader("🔍 Penjelasan Hasil Analisis")
                 st.write("""
