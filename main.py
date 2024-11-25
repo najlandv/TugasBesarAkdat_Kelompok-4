@@ -165,7 +165,7 @@ def linear_regression_model(df_processed):
 
 
 #visualisasi
-def plot_wordcloud(df_processed):
+def plot_wordcloud_dari(df_processed):
     # Menggabungkan semua lokasi keberangkatan untuk word cloud
     text = ' '.join(df_processed['DARI'])
     
@@ -177,6 +177,20 @@ def plot_wordcloud(df_processed):
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
     plt.title('Word Cloud Lokasi Keberangkatan')
+    st.pyplot(plt)
+
+def plot_wordcloud_tujuan(df_processed):
+    # Menggabungkan semua lokasi keberangkatan untuk word cloud
+    text = ' '.join(df_processed['TUJUAN'])
+    
+    # Membuat word cloud dari teks yang digabungkan
+    wordcloud = WordCloud(width=800, height=400, background_color="white", colormap="viridis").generate(text)
+    
+    # Menampilkan word cloud
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.title('Word Cloud Lokasi Tujuan')
     st.pyplot(plt)
 
 def plot_heatmap(df_processed):
@@ -486,43 +500,51 @@ def main():
         """, 
         unsafe_allow_html=True
     )
-
-
-
-    # Continue with the rest of the visualizations
+    # Judul aplikasi
     st.title("📤 Data Penumpang dan Kapal Cruise 2017-2023")
 
-    # File upload
+    # Sidebar untuk navigasi
+    st.sidebar.title("Navigasi")
+    options = st.sidebar.radio(
+        "Pilih Operasi",
+        [
+            "Unggah Data",
+            "Preprocessing",
+            "Analisis Regresi",
+            "Visualisasi",
+        ],
+    )
+
+    # Unggah file CSV
     uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
 
-        st.subheader("Uploaded Data")
-        st.write(df)  # Display the first few rows of the original dataframe
+        if options == "Unggah Data":
+            st.subheader("Uploaded Data")
+            st.write(df)
 
-        # Preprocessing and Analysis Button
-        if st.button('Run Preprocessing and Analysis'):
-            df_processed = preprocess_data(df)
-            st.session_state['df_processed'] = df_processed
-
-            # Boxed section for processed data
-            with st.container():
+        # Preprocessing
+        elif options == "Preprocessing":
+            if st.button("Run Preprocessing"):
+                df_processed = preprocess_data(df)
+                st.session_state["df_processed"] = df_processed
                 st.subheader("📈 Processed Data (After Preprocessing)")
                 st.write(df_processed)
 
-            # Linear regression analysis
-            model, mse, r2, comparison, X, y, y_pred = linear_regression_model(df_processed)
+        # Analisis Regresi Linier
+        elif options == "Analisis Regresi":
+            if "df_processed" in st.session_state:
+                df_processed = st.session_state["df_processed"]
+                model, mse, r2, comparison, X, y, y_pred = linear_regression_model(df_processed)
 
-            # Boxed section for regression results
-            with st.container():
                 st.subheader("📊 Linear Regression Analysis Results")
                 st.write(f"Mean Squared Error (MSE): {mse}")
                 st.write(f"R-squared: {r2}")
                 st.subheader("Actual vs Predicted")
                 st.write(comparison.head(10))
-                
-                # Add a hover effect explanation for analysis results
+
                 st.subheader("🔍 Penjelasan Hasil Analisis")
                 st.write("""
                 Hasil analisis regresi linier pada data jumlah penumpang naik dan jumlah kru kapal menunjukkan bahwa model memiliki kinerja yang sangat baik.
@@ -535,19 +557,18 @@ def main():
                 Secara keseluruhan, model regresi linier ini menunjukkan performa yang sangat baik dan dapat diandalkan untuk memprediksi jumlah kru kapal berdasarkan data penumpang naik.
                 """)
 
-
-                # Visualization Boxed Section
-                st.subheader("📊 Visualisasi Analisis Regresi Linier")
+                # Visualisasi regresi linier
+                st.subheader("📊 Visualisasi Regresi Linier")
                 fig, ax = plt.subplots(figsize=(10, 6))
-                ax.scatter(X, y, color='blue', label='Actual Data')  # Data points
-                ax.plot(X, y_pred, color='red', label='Regression Line')  # Regression line
-                ax.set_xlabel('PENUMPANG NAIK')
-                ax.set_ylabel('JUMLAH CREW')
-                ax.set_title('Linear Regression Visualization')
+                ax.scatter(X, y, color="blue", label="Actual Data")  # Data points
+                ax.plot(X, y_pred, color="red", label="Regression Line")  # Regression line
+                ax.set_xlabel("PENUMPANG NAIK")
+                ax.set_ylabel("JUMLAH CREW")
+                ax.set_title("Linear Regression Visualization")
                 ax.legend()
                 st.pyplot(fig)
 
-                # Add explanation of visualization inside a container
+                  # Add explanation of visualization inside a container
                 with st.container():
                     st.write("""
                         **1. Gambaran Umum**  
@@ -592,75 +613,39 @@ def main():
                         - **Analisis Lanjutan:** Sebaiknya dilakukan analisis lebih lanjut terhadap **outlier** untuk mengetahui faktor-faktor tambahan yang mungkin berpengaruh terhadap jumlah kru. Misalnya, variabel jenis kapal, rute, atau musim dapat ditambahkan dalam analisis lanjutan.  
                         - **Peningkatan Layanan:** Dengan memperkirakan kebutuhan kru secara lebih akurat, perusahaan kapal dapat memastikan layanan yang optimal bagi penumpang, sekaligus meminimalkan biaya operasional.
                     """)
+            else:
+                st.warning("Harap lakukan preprocessing terlebih dahulu!")
 
-            # Display the main title with an icon and color
-            st.markdown(
-                """
-                <h1 style="text-align: center; color: #FF5733;">
-                    📊 Visualisasi Data
-                </h1>
-                """, 
-                unsafe_allow_html=True
-            )
-            # Menampilkan Word Cloud untuk lokasi keberangkatan penumpang
-            with st.container():
-                st.subheader("🗣️ Word Cloud Lokasi Keberangkatan")
-                plot_wordcloud(df_processed)
+        # Visualisasi Data
+        elif options == "Visualisasi":
+            if "df_processed" in st.session_state:
+                df_processed = st.session_state["df_processed"]
 
-            # Menampilkan Heatmap yang menunjukkan hubungan antara Penumpang Naik, Turun, dan Jumlah Kru per Cabang
-            with st.container():
-                st.subheader("🌡️ Heatmap Penumpang Naik, Turun, dan Jumlah Kru per Cabang")
-                plot_heatmap(df_processed)
+                visualizations = [
+                    ("🗣️ Word Cloud Lokasi Keberangkatan", plot_wordcloud_dari),
+                    ("🗣️ Word Cloud Lokasi Tujuan", plot_wordcloud_tujuan),
+                    ("🌡️ Heatmap Penumpang Naik, Turun, dan Jumlah Kru per Cabang", plot_heatmap),
+                    ("📍 Box Plot Jumlah Penumpang per Tujuan", plot_top_tujuan),
+                    ("💥 Bubble Chart Jumlah Penumpang dan Kru per Rute", plot_bubble_chart),
+                    ("🍴 Proporsi Keberangkatan Berdasarkan Lokasi", plot_departure_pie_chart),
+                    ("📍 Top 10 Lokasi Tujuan Berdasarkan Frekuensi", plot_tujuan),
+                    ("🍩 Distribusi 5 Tujuan Terbanyak dengan Donut Chart", plot_donut_chart),
+                    ("📅 Stacked Area Chart (Untuk Menampilkan Tren Waktu)", plot_stacked_area_chart),
+                    ("📊 Rata-Rata Penumpang Naik Berdasarkan Cabang", plot_average_passengers_by_branch),
+                    ("🗺️ Top 5 Destinasi Berdasarkan Jumlah Perjalanan (Histogram)", plot_top_5_destinations_histogram),
+                    ("🚀 Top 5 Rute Paling Sering Dikunjungi", plot_top_5_routes),
+                    ("🌍 Distribusi Penumpang (Naik) berdasarkan 5 Tujuan Teratas", plot_top_5_destinations_passenger_distribution),
+                    ("🌟 5 Tujuan Teratas berdasarkan Durasi Rata-Rata (Bagan Lingkaran Efek 3D)", plot_top_5_destinations_avg_duration),
+                    ("🛳️ Proporsi Total Penumpang (Naik) berdasarkan 10 Tujuan Teratas", plot_top_10_destinations_passengers),
+                ]
 
-            # Box Plot untuk visualisasi distribusi jumlah penumpang per tujuan
-            with st.container():
-                st.subheader("📍 Box Plot Jumlah Penumpang per Tujuan")
-                plot_top_tujuan(df_processed)
+                for title, plot_function in visualizations:
+                    with st.container():
+                        st.subheader(title)
+                        plot_function(df_processed)
+            else:
+                st.warning("Harap lakukan preprocessing terlebih dahulu!")
 
-            # Menampilkan Bubble Chart untuk menggambarkan hubungan antara jumlah penumpang dan kru per rute
-            with st.container():
-                st.subheader("💥 Bubble Chart Jumlah Penumpang dan Kru per Rute")
-                plot_bubble_chart(df_processed)
-
-            # Menampilkan pie chart untuk menunjukkan proporsi keberangkatan berdasarkan lokasi
-            st.subheader('🍴 Proporsi Keberangkatan Berdasarkan Lokasi')
-            plot_departure_pie_chart(df_processed)
-
-            # Menampilkan grafik frekuensi tujuan penumpang berdasarkan lokasi
-            st.subheader('📍 Top 10 Lokasi Tujuan Berdasarkan Frekuensi')
-            plot_tujuan(df_processed)
-
-            # Menampilkan Donut Chart untuk menunjukkan distribusi 5 tujuan terbanyak
-            st.subheader('🍩 Distribusi 5 Tujuan Terbanyak dengan Donut Chart')
-            plot_donut_chart(df_processed)
-
-            # Menampilkan Stacked Area Chart untuk menggambarkan tren waktu perjalanan penumpang
-            st.subheader('📅 Stacked Area Chart (Untuk Menampilkan Tren Waktu)')
-            plot_stacked_area_chart(df_processed)
-
-            # Menampilkan rata-rata jumlah penumpang naik berdasarkan cabang
-            st.subheader('📊 Rata-Rata Penumpang Naik Berdasarkan Cabang')
-            plot_average_passengers_by_branch(df_processed)
-
-            # Menampilkan histogram untuk visualisasi 5 tujuan dengan perjalanan terbanyak
-            st.subheader('🗺️ Top 5 Destinasi Berdasarkan Jumlah Perjalanan (Histogram)')
-            plot_top_5_destinations_histogram(df_processed)
-
-            # Menampilkan top 5 rute yang paling sering dikunjungi
-            st.subheader('🚀 Top 5 Rute Paling Sering Dikunjungi')
-            plot_top_5_routes(df_processed)
-
-            # Menampilkan distribusi penumpang naik berdasarkan 5 tujuan teratas
-            st.subheader('🌍 Distribusi Penumpang (Naik) berdasarkan 5 Tujuan Teratas')
-            plot_top_5_destinations_passenger_distribution(df_processed)
-
-            # Menampilkan bagan lingkaran dengan efek 3D untuk durasi rata-rata perjalanan penumpang ke 5 tujuan teratas
-            st.subheader('🌟 5 Tujuan Teratas berdasarkan Durasi Rata-Rata (Bagan Lingkaran Efek 3D)')
-            plot_top_5_destinations_avg_duration(df_processed)
-
-            # Menampilkan proporsi total penumpang naik berdasarkan 10 tujuan teratas dalam bentuk pie chart
-            st.subheader('🛳️ Proporsi Total Penumpang (Naik) berdasarkan 10 Tujuan Teratas')
-            plot_top_10_destinations_passengers(df_processed)
-
+# Jalankan aplikasi
 if __name__ == "__main__":
     main()
